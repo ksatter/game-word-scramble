@@ -17,13 +17,16 @@
         <p id="enter-game-modal-text"></p>
         <form>
           <input type="text" name="name" placeholder="What's your name?" id="name-input">
-          <input type="submit" value="New Game" class="new-game" id="new-game">
-          <input type="submit" value="Create Game" class="create-game">
-          <input type="submit" value="Join Game" class="join-game">
+          <input type="submit" value="New Game" class="game-buttons" id="new-game">
+          <input type="submit" value="Create Game" class="game-buttons" id="create-game">
+          <input type="submit" value="Join Game" class="game-buttons" id="join-game">
+          <input type="submit" value="Start Game" class="game-buttons start-game">
         </form>
       </div>
     </div>
-    <div class="timer"></div>
+    <div class="timer">
+
+    </div>
     <div class="gameplay">
       <div class="letters"></div>
       <button type="button" name="button" id="shuffle">Shuffle</button>
@@ -38,12 +41,13 @@
       </fprm>
     </div>
     <div class="chat">
-      <div class="chat-text"></div>
+      <ul class="chat-text"></ul>
       <form id="comment-form">
         <input type="text" name="chat" placeholder="Enter Comment" id="chat-input">
         <input type="submit" value="Submit" id="new-comment">
       </fprm>
       <div class ="game-text"></div>
+      <button type="button" name="Start Game" class="start-game">Start Game</button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/5.3.1/firebase.js"></script>

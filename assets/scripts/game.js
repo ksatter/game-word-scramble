@@ -4,7 +4,7 @@
 const game = {
   vowels: ["A","E","I","O","U","Y"],
   consonants: ["B","C","D","F","G","H","J","K","L","M","N","P","Q","R","S","T","V","W","X","Z"],
-  alphabet: [],
+  common: ["E","T","A","O","I","N","S","R","H","L","D","C"],
   playerId: "",
   gameId: "",
   playerName: "",
@@ -14,58 +14,64 @@ const game = {
     words: {}
   },
 
-  combine: function() {
-    this.alphabet = this.consonants.concat(this.vowels)
-  },
-
   pushLetter: function(array){
-    let randomNumber = Math.floor(Math.random() * array.length);
-    this.gameData.letters.push(array[randomNumber])
+    let random = Math.floor(Math.random() * array.length);
+    if(this.gameData.letters.indexOf(array[random]) < 0) {
+      this.gameData.letters.push(array[random])
+    }
   },
 
-  getLetters: function () {
-    for(let i=1; i<=9; i++){
+  getLetters: function (callback) {
+    this.gameData.letters = [];
+    let i = 0;
+    while(i < 9){
+      console.log(i);
       if(i<=2){
         this.pushLetter(this.vowels)
       } else if (i<=4) {
         this.pushLetter(this.consonants)
       } else {
-        this.combine();
-        this.pushLetter(this.alphabet)
+        this.pushLetter(this.common)
       }
+      i = this.gameData.letters.length;
     }
+    callback(this.gameData);
   },
 
   createGame: function(name, callback){
-    this.getLetters();
-    database.createGame(this.gameData, function (res) {
-      game.gameId = res
-      game.joinGame(res, name);
-      callback(res);
+    this.getLetters(function (gameData) {
+      database.createGame(gameData, function (id) {
+        game.gameId = id;
+        game.joinGame(game.gameId, name, function (res) {
+          callback(game.gameId);
+        });
+      });
     });
   },
 
   joinGame: function (id, name, callback) {
+    this.playerName = name;
     database.joinGame(id, name, function (res) {
-      game.gameId = id;
       game.playerId = res;
-      game.playerName = name;
+      database.addMessage(game.playerName, "Has joined the game");
       database.updateGameData(function(res){
         game.gameData = res;
         console.log(game.gameData);
       });
-      if (callback) callback();
+      callback();
     });
   },
   startGame: function () {
     database.startGame()
   },
   playWord: function (word) {
-    database.playWord(word);
+    if(!this.gameData.words || this.gameData.words.indexOf(word)) {
+      database.playWord(word)
+    }
   },
   watchChat: function(callback) {
-    database.watchChat(function (chat) {
-      callback(chat);
-    })
-  }
+      database.watchChat(function (chat) {
+      callback(chat)
+    });
+  },
 }

@@ -21,7 +21,7 @@ const database = {
   },
   joinGame: function (id, name, callback) {
     Db.ref(`/${id}/players`).push({name}).then(function(snapshot){
-      callback(snapshot.key)
+      callback(name, snapshot.key)
     })
   },
 
@@ -32,7 +32,8 @@ const database = {
   },
 
   watchChat: function (callback) {
-    Db.ref(`${game.gameID}/chat`).on("child_added", function () {
+    console.log("called!!!");
+    Db.ref(`${game.gameId}/messages`).on("child_added", function (snapshot) {
       callback(snapshot.val());
     })
   },
@@ -46,7 +47,7 @@ const database = {
   startGame: function () {
     Db.ref(`${game.gameId}/started`).set(true)
   },
-  addMessage: function (name, message) {
-    Db.ref(`${game.gameId}/messages`).push({name, message})
+  addMessage: function (player, message) {
+    Db.ref(`${game.gameId}/messages`).push({player, message})
   }
 }

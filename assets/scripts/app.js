@@ -3,7 +3,7 @@
 /*---PARSE URL---*/
 
 let params = getParams();
-console.log(params);
+
 function getParams() {
   let url = window.location.href.split("?")[0];
   let paramArray = window.location.href.split("&").splice(1);
@@ -12,29 +12,37 @@ function getParams() {
   };
   paramArray.forEach(param => {
     param = param.split("=");
-    console.log(param);
     paramObject[param[0]] = param[1];
   })
   return paramObject
 }
 
-if (params.gameID) joinGameModal()
-
+if (params.gameId) {
+  game.gameId = params.gameId;
+  joinGameModal();
+}
+watchChat();
+waitForStart();
 /*---MODAL---*/
 
 //open with join content
 function joinGameModal() {
   $("#enter-game-modal-text").text(`${params.createdBy} has invited you to play! You can join their game or create your own and invite friends to play.`)
-  $(".start-game").hide();
   $("#new-game").hide();
   $("#enter-game-modal").show();
 }
 //open with new game logic
 function createGameModal() {
   $("#enter-game-modal-text").text(`Enter your name and click create to start a game. You'll get a link to send your friends so they can join!`);
-  $(".join-game").hide();
+  $("#join-game").hide();
   $("#new-game").hide();
-  $(".create-game").show();
+  $("#create-game").show();
+  $("#enter-game-modal").show();
+}
+function waitingGameModal() {
+  $("#enter-game-modal-text").text(`Waiting for ${params.createdBy} to start the game. You can continue waiting or start a new game.`)
+  $("#new-game").hide();
+  $("#join-game").hide();
   $("#enter-game-modal").show();
 }
 // close with "x"
@@ -53,17 +61,25 @@ $(".modal").on("click", function (event) {
 /*----CAME CREATION AND JOIN---*/
 //play-now button
 $(".play-now").click(function () {
-  if(params.createdBy) joinGameModal()
+  event.preventDefault();
+  if(params.gameId && game.playerId) waitingGameModal()
+  else if (game.playerId) {
+    $("#copy-text").empty();
+    $("#enter-game-modal").show()
+  }
+  else if (params.gameId) joinGameModal();
   else createGameModal()
 })
 //new Game
-$(".new-game").click(function () {
+$("#new-game").click(function () {
   event.preventDefault();
   createGameModal();
 })
 //create game button creates game and generates url for joining
-$(".create-game").click(function () {
+$("#create-game").click(function () {
   event.preventDefault();
+  $(".chat-text").empty();
+  game.gameId = "";
   let playerName = $("#name-input").val().trim();
   if (!playerName){
     $("#name-input").after("Please Enter your name");
@@ -74,43 +90,51 @@ $(".create-game").click(function () {
     //generates url and updates modal text
     $div = $("<div>");
     $url = $("<p>")
-      .text(`${params.url}?&gameID=${id}&createdBy=${playerName}`)
+      .text(`${params.url}?&gameId=${id}&createdBy=${playerName}`)
       .addClass("link-text");
     $btn = $("<button>")
-      .addClass("copy-button")
+      .addClass("game-buttons")
+      .attr("id", "copy-button")
       .text("Copy Url");
-    $div.append($url, $btn);
+    $cp = $("<div>")
+      .attr("id", "copy-text");
+    $div.append($url, $btn, $cp);
     $("#enter-game-modal-text").text(`Share this url to invite friends to join your game: `)
     $("#enter-game-modal-text").append($div);
-    $(".join-game").hide();
+    $("#join-game").hide();
     $("#name-input").hide();
-    $(".create-game").hide();
-    createButtons();
-    watchChat();
+    $("#create-game").hide();
+    $(".start-game").show();
   });
 });
 //join game
-$(".join-game").click(function () {
+$("#join-game").click(function () {
   event.preventDefault();
   let playerName = $("#name-input").val().trim();
   if (!playerName){
     $("#name-input").after("Please Enter your name");
     return false
   }
-  game.joinGame(name, function() {
+  game.joinGame(params.gameId, playerName, function() {
     createButtons();
-    watchChat();
+    $("#enter-game-modal").hide();
   });
 });
-$(document).on("click", ".copy-button", function() {
+$(document).on("mouseup", "#copy-button", function(e) {
   event.preventDefault();
   var $temp = $("<input>");
   $("body").append($temp);
   $temp.val($(".link-text").text()).select();
   document.execCommand("copy");
   $temp.remove();
-  $(this).after("Copied!")
+  $("#copy-text").text("Copied!")
 });
+$(document).on("mousedown", "#copy-button", function(e) {
+  $("#copy-text").empty();
+});
+$(".start-game").click(function () {
+  game.startGame();
+})
 let usedLetters = [];
 let letterInput = "";
 //Create letter buttons
@@ -209,10 +233,39 @@ function clearLetter() {
   $("#letter-"+index).show();
   $("#word-input").val(letterInput);
 }
-
-/*---CHAT FUNCTIONALITY---*/
 function watchChat() {
-  game.watchChat(function (message) {
-    console.log(message);
-  })
+  if (!game.gameId){
+    setTimeout(watchChat, 500);
+  } else {
+    Db.ref(`${game.gameId}/messages`).on("child_added", function (snapshot) {
+      comment = snapshot.val();
+      $comment = $("<li>")
+        .addClass("comment");
+      $name = $("<span>")
+        .addClass("comment-player")
+        .text(comment.player);
+      $message = $("<span>")
+        .addClass("comment-message")
+        .text(comment.message);
+      $comment.append($name, " : ", $message);
+      $(".chat-text").append($comment)
+    })
+  }
+}
+function waitForStart() {
+  if(!game.gameData.started){
+    setTimeout(waitForStart, 500)
+  } else {
+    createButtons();
+    let time = 60;
+    let timer = setInterval(countdown, 1000)
+    function countdown() {
+      $(".timer").text(`You have ${timer} seconds remaining`)
+      time --
+      if(time = 0){
+        clearInterval(timer)
+        console.log("timer ended");
+      }
+    }
+  }
 }
