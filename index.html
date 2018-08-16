@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Word Scrambler</title>
+    <link rel="stylesheet" href="assets/style/style.css">
+  </head>
+  <body>
+    <header>
+      Welcome to Word Scrambler! Challenge your friends to see who has the better head for words!
+      <button type="button" name="Play Now" class="play-now">Play Now!</button>
+    </header>
+
+    <div id="enter-game-modal" class="modal" >
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <p id="enter-game-modal-text"></p>
+        <form>
+          <input type="text" name="name" placeholder="What's your name?" id="name-input">
+          <input type="submit" value="New Game" class="new-game" id="new-game">
+          <input type="submit" value="Create Game" class="create-game">
+          <input type="submit" value="Join Game" class="join-game">
+        </form>
+      </div>
+    </div>
+    <div class="timer"></div>
+    <div class="gameplay">
+      <div class="letters"></div>
+      <button type="button" name="button" id="shuffle">Shuffle</button>
+    </div>
+    <div class="playerWords">
+      <ul id="words"></ul>
+      <form id="word">
+        <input type="text" name="word" placeholder="Enter Word" id="word-input">
+        <input type="submit" value="Submit" id="new-word">
+        <input type="submit" value="Clear Word" id="clear-word">
+        <input type="submit" value="Clear Letter" id="clear-letter">
+      </fprm>
+    </div>
+    <div class="chat">
+      <div class="chat-text"></div>
+      <form id="comment-form">
+        <input type="text" name="chat" placeholder="Enter Comment" id="chat-input">
+        <input type="submit" value="Submit" id="new-comment">
+      </fprm>
+      <div class ="game-text"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/5.3.1/firebase.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="assets/scripts/firebase.js"></script>
+    <script type="text/javascript" src="assets/scripts/game.js"></script>
+    <script type="text/javascript" src="assets/scripts/app.js"></script>
+  </body>
+  </html>
