@@ -138,6 +138,8 @@ $(document).on("mousedown", "#copy-button", function(e) {
 });
 $(".start-game").click(function () {
   game.changeState();
+  $(".start-game").hide();
+  $("#enter-game-modal").hide();
 })
 let usedLetters = [];
 let letterInput = "";
@@ -147,6 +149,7 @@ function createButtons() {
   letters = game.gameData.letters;
   usedLetters = [];
   letterInput = "";
+  $(".letters").empty();
   letters.forEach((letter, index)=> {
     let btn = $("<button>")
         .addClass("letter")
@@ -156,13 +159,6 @@ function createButtons() {
     $(".letters").append(btn)
     usedLetters.push("");
   });
-}
-//destroy letter buttons(
-function destroyButtons() {
-  usedLetters = [];
-  letterInput = "";
-  letters = [];
-  $(".letters").empty();
 }
 //Click function for rearranging letter buttons
 $("#shuffle").click(() => {
@@ -275,7 +271,7 @@ function waitForStart() {
     setTimeout(waitForStart, 500)
   } else {
     createButtons();
-    let time = 15;
+    let time = 60;
     let timer = setInterval(countdown, 1000)
     function countdown() {
       time --
@@ -284,10 +280,11 @@ function waitForStart() {
         $(".timer").text(`Time's Up!`);
         clearInterval(timer)
         if(!params.createdBy){
-          game.endRound(function (res) {
-
+          game.endGame(function () {
+            $(".start-game").show();
+            waitForStart();
           })
-        }
+        } else waitForStart();
       }
     }
   }

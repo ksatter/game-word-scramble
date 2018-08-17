@@ -56,7 +56,7 @@ const game = {
     this.gameId = id;
     database.joinGame(id, name, function (res) {
       game.playerId = res;
-      database.addMessage("Game update", `${game.playerName} has joined the game`);
+      game.addMessage("Game update", `${game.playerName} has joined the game`);
       database.watchGameData(function(res){
         game.gameData = res;
         console.log(game.gameData);
@@ -78,23 +78,30 @@ const game = {
     if(!played) database.playWord(word)
   },
   setupRound: function (callback) {
-    this.gameData = {
-      roundStarted: false,
-      letters: [],
-      words: {}
-    };
-    this.getLetters(function (gameData) {
-      callback(gameData);
+    this.addMessage("Game update", `Waiting`);
+    this.gameData.roundStarted = false;
+    this.gameData.words = {};
+    for (var key in this.gameData.players){
+      this.gameData.players[key].words = {};
+    }
+    this.getLetters(function (data) {
+      callback(data);
     })
   },
-  endRound: function (callback) {
+  endGame: function (callback) {
     this.changeState(function () {
-      database.addMessage("Game update", `Round ended`);
-      database.addMessage("Game update", `Calculating scores`);
-      game.calculateScores()
+      game.addMessage("Game update", `Game ended`);
+      game.addMessage("Game update", `Calculating scores`);
+      game.calculateScores(function () {
+        game.setupRound(function () {
+          database.setupRound(function () {
+            callback();
+          })
+        })
+      })
     });
   },
-  calculateScores: function () {
+  calculateScores: function (callback) {
     let currentWinner, currentPlayer;
 
     //check each player's score
@@ -112,13 +119,22 @@ const game = {
         currentPlayer.totalWords++;
       }
       //display player's score
-      database.addMessage("Game update", `${currentPlayer.name} played ` +
+      this.addMessage("Game update", `${currentPlayer.name} played ` +
         `${currentPlayer.totalWords} words for `+
         `${currentPlayer.score} total points`);
       //update current high score holder
       if(!currentWinner || currentPlayer.score > currentWinner.score) currentWinner = currentPlayer
     }
-    database.addMessage("Game update", `${currentWinner.name} won! `)
+    this.addMessage("Game update", `${currentWinner.name} won! `)
+    callback()
+  },
+  newGame: function (callback) {
+    this.setupRound(function () {
+
+    })
+  },
+  addMessage: function (player, message) {
+    database.addMessage(player, message)
   }
 
 }

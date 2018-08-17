@@ -24,7 +24,7 @@ const database = {
       callback(snapshot.key);
     })
   },
-  setupRound: function () {
+  setupRound: function (callback) {
     Db.ref(game.gameId).set(game.gameData)
       .then(function (){
         callback();
