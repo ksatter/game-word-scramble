@@ -21,7 +21,7 @@ const database = {
   },
   joinGame: function (id, name, callback) {
     Db.ref(`/${id}/players`).push({name}).then(function(snapshot){
-      callback(name, snapshot.key)
+      callback(name, snapshot.key, id)
     })
   },
 

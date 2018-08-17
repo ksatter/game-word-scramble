@@ -17,10 +17,8 @@ function getParams() {
   return paramObject
 }
 
-if (params.gameId) {
-  game.gameId = params.gameId;
-  joinGameModal();
-}
+if (params.gameId) joinGameModal();
+
 watchChat();
 waitForStart();
 /*---MODAL---*/
@@ -79,7 +77,6 @@ $("#new-game").click(function () {
 $("#create-game").click(function () {
   event.preventDefault();
   $(".chat-text").empty();
-  game.gameId = "";
   let playerName = $("#name-input").val().trim();
   if (!playerName){
     $("#name-input").after("Please Enter your name");
@@ -137,9 +134,11 @@ $(".start-game").click(function () {
 })
 let usedLetters = [];
 let letterInput = "";
+let letters = [];
 //Create letter buttons
 function createButtons() {
-  game.gameData.letters.forEach((letter, index)=> {
+  letters = game.gameData.letters;
+  letters.forEach((letter, index)=> {
     let btn = $("<button>")
         .addClass("letter")
         .attr("data-index", index)
@@ -161,7 +160,7 @@ $(document).on("click", ".letter", function () {
   //get index and update arrays and input string
   let index = $(this).data("index")
   usedLetters[index] = $(this).text();
-  game.gameData.letters[index] = "";
+  letters[index] = "";
   letterInput+= $(this).text();
   //update DOM
   $(this).hide();
@@ -207,6 +206,7 @@ $("#new-word").click(function () {
     return false
   }
   game.playWord(word);
+  clearWord();
 })
 function clearWord() {
   //move used letters back in to letters array
@@ -260,9 +260,9 @@ function waitForStart() {
     let time = 60;
     let timer = setInterval(countdown, 1000)
     function countdown() {
-      $(".timer").text(`You have ${timer} seconds remaining`)
+      $(".timer").text(`You have ${time} seconds remaining`)
       time --
-      if(time = 0){
+      if(time === 0){
         clearInterval(timer)
         console.log("timer ended");
       }

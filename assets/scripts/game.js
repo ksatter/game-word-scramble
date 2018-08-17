@@ -51,6 +51,7 @@ const game = {
 
   joinGame: function (id, name, callback) {
     this.playerName = name;
+    this.gameId = id;
     database.joinGame(id, name, function (res) {
       game.playerId = res;
       database.addMessage(game.playerName, "Has joined the game");
@@ -65,9 +66,15 @@ const game = {
     database.startGame()
   },
   playWord: function (word) {
-    if(!this.gameData.words || this.gameData.words.indexOf(word)) {
-      database.playWord(word)
+    if(!this.gameData.words) database.playWord(word)
+    let played = false;
+    for(var key in this.gameData.words){
+      if (this.gameData.words[key] === word) played = true;
     }
+    if(!played) database.playWord(word)
+    // if(!this.gameData.words || this.gameData.words.indexOf(word)) {
+    //
+    // }
   },
   watchChat: function(callback) {
       database.watchChat(function (chat) {
