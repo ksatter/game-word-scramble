@@ -2,8 +2,18 @@
 .start-game {
   display: none;
 }
-
-
+body {
+  background: #BCD8B7;
+  color: #93827F;
+  box-sizing: border-box;
+  margin: 0;
+}
+header {
+  background: #6BA292;
+  color: #93827F;
+  padding: 3em;
+  font-size: largest;
+}
 
 /* The Modal (background) */
 .modal {

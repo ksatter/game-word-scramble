@@ -157,21 +157,26 @@ $("#join-game").click(function () {
     return false
   }
   //join existing game
-  game.joinGame(params.gameId, playerName, function(res) {
-    //update dom
-    //don't allow join mid game
-    if(game.gameData.roundStarted) {
-      console.log("game already started");
-      clearInterval(timer)
-      $("#chat-warn").show()
-      $("#chat-warn").text("Please wait for the current game to end")
-      return
-    }
-    createButtons();
-    $("#enter-game-modal").hide();
-  });
+  joinGame(playerName)
 });
 
+function joinGame(name) {
+  $("#modal-warn").show();
+  let newPlayer = name;
+  $("#modal-warn").text(`Attempting to join game`);
+  game.checkStatus(params.gameId, function (res) {
+    if (res) {
+      $("#modal-warn").text(`Waiting for current game to end`);
+      setTimeout(joinGame, 3000)
+    } else {
+      game.joinGame(newPlayer, params.gameId, function(res) {
+        waitForStart();
+        watchChat()
+        $("#enter-game-modal").hide();
+      });
+    }
+  })
+}
 /*----START GAME---*/
 
 let time, timer;

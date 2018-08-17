@@ -61,5 +61,10 @@ const database = {
   },
   addMessage: function (player, message) {
     Db.ref(`${game.gameId}/messages`).push({player, message})
+  },
+  checkStatus: function (id, callback) {
+    Db.ref(id).once("value", function(snapshot) {
+      callback(snapshot.val().roundStarted)
+    })
   }
 }

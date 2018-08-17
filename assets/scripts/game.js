@@ -61,7 +61,7 @@ const game = {
         game.gameData = res;
         console.log(game.gameData);
       });
-      setTimeout(callback, 5000);
+      setTimeout(callback, 3000)
     });
   },
   //trigger start of round
@@ -86,7 +86,6 @@ const game = {
    callback(word);
   },
   setupRound: function (callback) {
-    this.addMessage("Game update", `Waiting`);
     this.gameData.roundStarted = false;
     this.gameData.words = {};
     for (var key in this.gameData.players){
@@ -94,6 +93,7 @@ const game = {
     }
     this.getLetters(function (data) {
       callback(data);
+      game.addMessage("Game update", `Waiting`);
     })
   },
   endGame: function (callback) {
@@ -139,6 +139,11 @@ const game = {
 
   addMessage: function (player, message) {
     database.addMessage(player, message)
+  },
+  checkStatus: function (id, callback) {
+    this.gameId = id
+    database.checkStatus(id, function (res) {
+      callback(res)
+    })
   }
-
 }
