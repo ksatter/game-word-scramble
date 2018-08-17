@@ -18,7 +18,6 @@ const game = {
     this.gameData.letters = [];
     let i = 0;
     while(i < 9){
-      console.log(i);
       //guarantee 2 vowels
       if(i<=2){
         this.pushLetter(this.vowels)
@@ -57,8 +56,8 @@ const game = {
     this.gameId = id;
     database.joinGame(id, name, function (res) {
       game.playerId = res;
-      database.addMessage(game.playerName, "Has joined the game");
-      database.updateGameData(function(res){
+      database.addMessage("Game update", `${game.playerName} has joined the game`);
+      database.watchGameData(function(res){
         game.gameData = res;
         console.log(game.gameData);
       });
@@ -66,8 +65,9 @@ const game = {
     });
   },
   //trigger start of round
-  changeState: function (state) {
-    database.changeState(state)
+  changeState: function (callback) {
+    database.changeState();
+    if (callback) callback();
   },
   playWord: function (word) {
     if(!this.gameData.words) database.playWord(word)
@@ -76,11 +76,6 @@ const game = {
       if (this.gameData.words[key] === word) played = true;
     }
     if(!played) database.playWord(word)
-  },
-  watchChat: function(callback) {
-      database.watchChat(function (chat) {
-      callback(chat)
-    });
   },
   setupRound: function (callback) {
     this.gameData = {
@@ -91,5 +86,39 @@ const game = {
     this.getLetters(function (gameData) {
       callback(gameData);
     })
+  },
+  endRound: function (callback) {
+    this.changeState(function () {
+      database.addMessage("Game update", `Round ended`);
+      database.addMessage("Game update", `Calculating scores`);
+      game.calculateScores()
+    });
+  },
+  calculateScores: function () {
+    let currentWinner, currentPlayer;
+
+    //check each player's score
+    for (let player in this.gameData.players) {
+      currentPlayer = {
+        name: this.gameData.players[player].name,
+        words: this.gameData.players[player].words,
+        totalWords: 0,
+        score: 0,
+        id: player,
+      };
+      //add length of word to player score
+      for (let word in currentPlayer.words){
+        currentPlayer.score += currentPlayer.words[word].length
+        currentPlayer.totalWords++;
+      }
+      //display player's score
+      database.addMessage("Game update", `${currentPlayer.name} played ` +
+        `${currentPlayer.totalWords} words for `+
+        `${currentPlayer.score} total points`);
+      //update current high score holder
+      if(!currentWinner || currentPlayer.score > currentWinner.score) currentWinner = currentPlayer
+    }
+    database.addMessage("Game update", `${currentWinner.name} won! `)
   }
+
 }

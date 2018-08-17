@@ -214,6 +214,7 @@ $("#word-input").keydown(function (event) {
 })
 $("#new-word").click(function () {
   event.preventDefault();
+  if(!game.gameData.roundStarted) return false
   let word = $("#word-input").val()
   if (!word) {
     $("#word-input").after("Please enter a word");
@@ -274,7 +275,7 @@ function waitForStart() {
     setTimeout(waitForStart, 500)
   } else {
     createButtons();
-    let time = 60;
+    let time = 15;
     let timer = setInterval(countdown, 1000)
     function countdown() {
       time --
@@ -282,7 +283,11 @@ function waitForStart() {
       if(time === 0){
         $(".timer").text(`Time's Up!`);
         clearInterval(timer)
+        if(!params.createdBy){
+          game.endRound(function (res) {
 
+          })
+        }
       }
     }
   }

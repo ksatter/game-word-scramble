@@ -17,15 +17,20 @@ const database = {
     Db.ref().push(gameData)
       .then(function (snapshot){
         callback(snapshot.key);
-      });
+    });
   },
   joinGame: function (id, name, callback) {
     Db.ref(`/${id}/players`).push({name}).then(function(snapshot){
-      callback(name, snapshot.key, id)
+      callback(snapshot.key);
     })
   },
-
-  updateGameData: function (callback) {
+  setupRound: function () {
+    Db.ref(game.gameId).set(game.gameData)
+      .then(function (){
+        callback();
+    });
+  },
+  watchGameData: function (callback) {
     Db.ref(game.gameId).on("value", function(snapshot){
       callback(snapshot.val());
     })
@@ -40,7 +45,7 @@ const database = {
   playWord: function (word) {
     Db.ref(`${game.gameId}/words`).push(word).then(function () {
       Db.ref(`${game.gameId}/players/${game.playerId}/words`).push(word).then(function () {
-        database.addMessage(game.playerName, `played ${word}`)
+        database.addMessage("Game update", `${game.playerName} played ${word}`)
       });
     });
   },
