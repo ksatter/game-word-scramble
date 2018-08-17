@@ -9,27 +9,23 @@ const game = {
   gameId: "",
   playerName: "",
   gameData: {
-    started: false,
+    roundStarted: false,
     letters: [],
     words: {}
   },
-
-  pushLetter: function(array){
-    let random = Math.floor(Math.random() * array.length);
-    if(this.gameData.letters.indexOf(array[random]) < 0) {
-      this.gameData.letters.push(array[random])
-    }
-  },
-
+  //create array of 9 unique letters
   getLetters: function (callback) {
     this.gameData.letters = [];
     let i = 0;
     while(i < 9){
       console.log(i);
+      //guarantee 2 vowels
       if(i<=2){
         this.pushLetter(this.vowels)
+      //guarantee 2 consonants
       } else if (i<=4) {
         this.pushLetter(this.consonants)
+      //remainder of letters will be commonly used letters
       } else {
         this.pushLetter(this.common)
       }
@@ -37,18 +33,25 @@ const game = {
     }
     callback(this.gameData);
   },
-
+  //get random letter from array and push if new letter
+  pushLetter: function(array){
+    let random = Math.floor(Math.random() * array.length);
+    if(this.gameData.letters.indexOf(array[random]) < 0) {
+      this.gameData.letters.push(array[random])
+    }
+  },
+  //create entry in firebase and set up game
   createGame: function(name, callback){
-    this.getLetters(function (gameData) {
+    this.setupRound(function (gameData) {
       database.createGame(gameData, function (id) {
         game.gameId = id;
         game.joinGame(game.gameId, name, function (res) {
           callback(game.gameId);
         });
       });
-    });
+    })
   },
-
+  //add new player to firebase and start listening from changes to game state
   joinGame: function (id, name, callback) {
     this.playerName = name;
     this.gameId = id;
@@ -62,8 +65,9 @@ const game = {
       callback();
     });
   },
-  startGame: function () {
-    database.startGame()
+  //trigger start of round
+  changeState: function (state) {
+    database.changeState(state)
   },
   playWord: function (word) {
     if(!this.gameData.words) database.playWord(word)
@@ -72,13 +76,20 @@ const game = {
       if (this.gameData.words[key] === word) played = true;
     }
     if(!played) database.playWord(word)
-    // if(!this.gameData.words || this.gameData.words.indexOf(word)) {
-    //
-    // }
   },
   watchChat: function(callback) {
       database.watchChat(function (chat) {
       callback(chat)
     });
   },
+  setupRound: function (callback) {
+    this.gameData = {
+      roundStarted: false,
+      letters: [],
+      words: {}
+    };
+    this.getLetters(function (gameData) {
+      callback(gameData);
+    })
+  }
 }

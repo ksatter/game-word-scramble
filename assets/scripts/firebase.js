@@ -44,8 +44,10 @@ const database = {
       });
     });
   },
-  startGame: function () {
-    Db.ref(`${game.gameId}/started`).set(true)
+  changeState: function () {
+    if(game.gameData.roundStarted)  Db.ref(`${game.gameId}/roundStarted`).set(false)
+    else Db.ref(`${game.gameId}/roundStarted`).set(true)
+
   },
   addMessage: function (player, message) {
     Db.ref(`${game.gameId}/messages`).push({player, message})

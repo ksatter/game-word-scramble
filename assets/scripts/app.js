@@ -12,7 +12,7 @@ function getParams() {
   };
   paramArray.forEach(param => {
     param = param.split("=");
-    paramObject[param[0]] = param[1];
+    paramObject[param[0]] = param[1].split("+").join(" ");
   })
   return paramObject
 }
@@ -77,6 +77,12 @@ $("#new-game").click(function () {
 $("#create-game").click(function () {
   event.preventDefault();
   $(".chat-text").empty();
+  if(game.gameId){
+    Db.ref(`${game.gameId}/messages`).off("child_added")
+    game.gameId = ""
+  }
+  params.gameId = "";
+  params.createdBy = "";
   let playerName = $("#name-input").val().trim();
   if (!playerName){
     $("#name-input").after("Please Enter your name");
@@ -85,6 +91,7 @@ $("#create-game").click(function () {
   //Create Game
   game.createGame(playerName, function(id) {
     //generates url and updates modal text
+    playerName = playerName.split(" ").join("+");
     $div = $("<div>");
     $url = $("<p>")
       .text(`${params.url}?&gameId=${id}&createdBy=${playerName}`)
@@ -130,7 +137,7 @@ $(document).on("mousedown", "#copy-button", function(e) {
   $("#copy-text").empty();
 });
 $(".start-game").click(function () {
-  game.startGame();
+  game.changeState();
 })
 let usedLetters = [];
 let letterInput = "";
@@ -138,6 +145,8 @@ let letters = [];
 //Create letter buttons
 function createButtons() {
   letters = game.gameData.letters;
+  usedLetters = [];
+  letterInput = "";
   letters.forEach((letter, index)=> {
     let btn = $("<button>")
         .addClass("letter")
@@ -148,8 +157,13 @@ function createButtons() {
     usedLetters.push("");
   });
 }
-
-
+//destroy letter buttons(
+function destroyButtons() {
+  usedLetters = [];
+  letterInput = "";
+  letters = [];
+  $(".letters").empty();
+}
 //Click function for rearranging letter buttons
 $("#shuffle").click(() => {
   $(".letters").children().sort(() => Math.random() - 0.5)
@@ -253,18 +267,22 @@ function watchChat() {
   }
 }
 function waitForStart() {
-  if(!game.gameData.started){
+  if(params.createdBy){
+    $(".timer").text(`Waiting for ${params.createdBy} to start the game`);
+  }
+  if(!game.gameData.roundStarted){
     setTimeout(waitForStart, 500)
   } else {
     createButtons();
     let time = 60;
     let timer = setInterval(countdown, 1000)
     function countdown() {
-      $(".timer").text(`You have ${time} seconds remaining`)
       time --
+      $(".timer").text(`You have ${time} seconds remaining`)
       if(time === 0){
+        $(".timer").text(`Time's Up!`);
         clearInterval(timer)
-        console.log("timer ended");
+
       }
     }
   }
