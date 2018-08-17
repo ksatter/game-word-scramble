@@ -14,6 +14,22 @@ header {
   padding: 3em;
   font-size: largest;
 }
+.gameplay {
+  width: 45%;
+  float: left;
+  margin-top: 10%;
+  margin-left: 10%;
+}
+.chat {
+  width: 25%;
+  float: right;
+  margin-top: 10%;
+  margin-right: 10%;
+}
+
+.letter {
+  width: 5%
+}
 
 /* The Modal (background) */
 .modal {

@@ -169,7 +169,7 @@ function joinGame(name) {
       $("#modal-warn").text(`Waiting for current game to end`);
       setTimeout(joinGame, 3000)
     } else {
-      game.joinGame(newPlayer, params.gameId, function(res) {
+      game.joinGame( params.gameId, newPlayer, function(res) {
         waitForStart();
         watchChat()
         $("#enter-game-modal").hide();
