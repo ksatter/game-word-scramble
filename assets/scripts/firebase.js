@@ -21,7 +21,12 @@ const database = {
   },
   joinGame: function (id, name, callback) {
     Db.ref(`/${id}/players`).push({name}).then(function(snapshot){
-      callback(snapshot.key);
+      game.playerId = snapshot.key;
+      Db.ref(id).once("value", function (snapshot) {
+        game.gameData = snapshot.val();
+        callback(game.playerId);
+      })
+
     })
   },
   setupRound: function (callback) {

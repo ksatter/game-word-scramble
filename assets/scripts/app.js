@@ -1,7 +1,5 @@
-
-
-/*---PARSE URL---*/
-
+/*---LOAD STATE---*/
+//Parse url
 let params = getParams();
 
 function getParams() {
@@ -17,10 +15,18 @@ function getParams() {
   return paramObject
 }
 
-if (params.gameId) joinGameModal();
+let usedLetters = [];
+let letterInput = "";
+let letters = [];
+let waiting = false
+game.getLetters(function () {
+  createButtons();
+
+})
 
 watchChat();
 waitForStart();
+
 /*---MODAL---*/
 
 //open with join content
@@ -37,6 +43,7 @@ function createGameModal() {
   $("#create-game").show();
   $("#enter-game-modal").show();
 }
+//open with waiting logic
 function waitingGameModal() {
   $("#enter-game-modal-text").text(`Waiting for ${params.createdBy} to start the game. You can continue waiting or start a new game.`)
   $("#new-game").hide();
@@ -55,9 +62,11 @@ $(".modal").on("click", function (event) {
   }
 });
 
-
 /*----CAME CREATION AND JOIN---*/
-//play-now button
+
+//open modal based on current state
+if (params.gameId) joinGameModal();
+
 $(".play-now").click(function () {
   event.preventDefault();
   if(params.gameId && game.playerId) waitingGameModal()
@@ -68,7 +77,7 @@ $(".play-now").click(function () {
   else if (params.gameId) joinGameModal();
   else createGameModal()
 })
-//new Game
+
 $("#new-game").click(function () {
   event.preventDefault();
   createGameModal();
@@ -77,20 +86,26 @@ $("#new-game").click(function () {
 $("#create-game").click(function () {
   event.preventDefault();
   $(".chat-text").empty();
+  $("#modal-warn").hide();
+  //if a previous game was started, change listener for chat to new ref
   if(game.gameId){
     Db.ref(`${game.gameId}/messages`).off("child_added")
-    game.gameId = ""
-  }
-  params.gameId = "";
-  params.createdBy = "";
-  let playerName = $("#name-input").val().trim();
-  if (!playerName){
-    $("#name-input").after("Please Enter your name");
+    game.gameId = "";
     return false
   }
-  //Create Game
+  //clear previously set data if present
+  params.gameId = "";
+  params.createdBy = "";
+  //get player name
+  let playerName = $("#name-input").val().trim();
+  if (!playerName){
+    $("#modal-warn").show();
+    $("#modal-warn").text("Please enter your name");
+    return false
+  }
+  //Create game
   game.createGame(playerName, function(id) {
-    //generates url and updates modal text
+    //generate link and new elemaents to hold it
     playerName = playerName.split(" ").join("+");
     $div = $("<div>");
     $url = $("<p>")
@@ -103,6 +118,7 @@ $("#create-game").click(function () {
     $cp = $("<div>")
       .attr("id", "copy-text");
     $div.append($url, $btn, $cp);
+    //Update modal state
     $("#enter-game-modal-text").text(`Share this url to invite friends to join your game: `)
     $("#enter-game-modal-text").append($div);
     $("#join-game").hide();
@@ -111,45 +127,86 @@ $("#create-game").click(function () {
     $(".start-game").show();
   });
 });
-//join game
+//allow user to copy url
+$(document).on("mouseup", "#copy-button", function(e) {
+  event.preventDefault();
+  //sets up dummy element to hold value
+  var $temp = $("<input>");
+  $("body").append($temp);
+  //pushes text to dummy and copies to clipboard
+  $temp.val($(".link-text").text()).select();
+  document.execCommand("copy");
+  //removes dummy
+  $temp.remove();
+  $("#copy-text").text("Copied!")
+});
+
+$(document).on("mousedown", "#copy-button", function(e) {
+  $("#copy-text").empty();
+});
+//join game adds player to game based on params
 $("#join-game").click(function () {
   event.preventDefault();
+  $("#modal-warn").hide();
+
+  //retrieve name
   let playerName = $("#name-input").val().trim();
   if (!playerName){
-    $("#name-input").after("Please Enter your name");
+    $("#modal-warn").show()
+    $("#modal-warn").text("Please enter your name")
     return false
   }
-  game.joinGame(params.gameId, playerName, function() {
+  //join existing game
+  game.joinGame(params.gameId, playerName, function(res) {
+    //update dom
+    //don't allow join mid game
+    if(game.gameData.roundStarted) {
+      console.log("game already started");
+      clearInterval(timer)
+      $("#chat-warn").show()
+      $("#chat-warn").text("Please wait for the current game to end")
+      return
+    }
     createButtons();
     $("#enter-game-modal").hide();
   });
 });
-$(document).on("mouseup", "#copy-button", function(e) {
-  event.preventDefault();
-  var $temp = $("<input>");
-  $("body").append($temp);
-  $temp.val($(".link-text").text()).select();
-  document.execCommand("copy");
-  $temp.remove();
-  $("#copy-text").text("Copied!")
-});
-$(document).on("mousedown", "#copy-button", function(e) {
-  $("#copy-text").empty();
-});
+
+/*----START GAME---*/
+
+let time, timer;
+//listens for game state to change
+function waitForStart() {
+  //determine if user game creator
+  if(params.createdBy){
+    $(".timer").text(`Waiting for ${params.createdBy} to start the game`);
+  }
+  //keep listening for game to start
+  if(!game.gameData.roundStarted){
+    setTimeout(waitForStart, 500)
+  //once game started, create new buttons and start timer
+} else if(game.gameData.roundStarted){
+    //if user is creator, update STATE
+    if(!params.createdBy) game.addMessage("Game update", "Started")
+    createButtons();
+    time = 60;
+    timer = setInterval(countdown, 1000)
+  }
+}
+//update game state when buton pressed (only visible ig current user created game)
 $(".start-game").click(function () {
   game.changeState();
   $(".start-game").hide();
   $("#enter-game-modal").hide();
 })
-let usedLetters = [];
-let letterInput = "";
-let letters = [];
 //Create letter buttons
 function createButtons() {
+  //clear previous data
   letters = game.gameData.letters;
   usedLetters = [];
   letterInput = "";
   $(".letters").empty();
+  //generate letter buttons and attatch
   letters.forEach((letter, index)=> {
     let btn = $("<button>")
         .addClass("letter")
@@ -157,9 +214,34 @@ function createButtons() {
         .attr("id", "letter-" + index)
         .text(letter);
     $(".letters").append(btn)
+    //setup placeholders for used letters
     usedLetters.push("");
   });
 }
+//timer functionality
+function countdown() {
+  //count down
+  time --
+  $(".timer").text(`You have ${time} seconds remaining`)
+  //end game
+  if(time === 0){
+    $(".timer").text(`Time's Up!`);
+    clearInterval(timer)
+
+    //if creator, set up new game
+    if(!params.createdBy){
+      game.endGame(function () {
+        $(".start-game").show();
+        waitForStart();
+      })
+    //if not reator, ,wait for new game
+    } else  waitForStart();
+
+  }
+}
+
+/*----GAME PLAY----*/
+
 //Click function for rearranging letter buttons
 $("#shuffle").click(() => {
   $(".letters").children().sort(() => Math.random() - 0.5)
@@ -187,38 +269,41 @@ $("#clear-letter").click(function () {
   event.preventDefault();
   clearLetter();
 })
+//click event for submit word button
+$("#new-word").click(function () {
+  event.preventDefault();
+  submitWord();
+})
 //keyboard events
 $("#word-input").keydown(function (event) {
+  event.preventDefault();
+  $("#word-warn").hide()
+  //delete
   if(event.which === 46) {
     clearWord();
-    return false
+    return
+  //backspace
   } else if(event.which === 8){
     clearLetter();
-    return false
-  }
-  else {
+    return
+  //enter
+  } else if(event.which === 13){
+    submitWord();
+    return
+  //anything else
+  } else {
     event.preventDefault();
+    //get input and see if a valid letter, add letter if it is
     let newLetter = String.fromCharCode(event.which).toUpperCase();
     let letterIndex = letters.indexOf(newLetter);
     if (letterIndex === -1) {
       return false
-    }else {
+    } else {
       $("#letter-" + letterIndex).click();
-      return false
     }
   }
 })
-$("#new-word").click(function () {
-  event.preventDefault();
-  if(!game.gameData.roundStarted) return false
-  let word = $("#word-input").val()
-  if (!word) {
-    $("#word-input").after("Please enter a word");
-    return false
-  }
-  game.playWord(word);
-  clearWord();
-})
+//clear entire word
 function clearWord() {
   //move used letters back in to letters array
   usedLetters.forEach((letter, index) => {
@@ -232,11 +317,12 @@ function clearWord() {
   $(".letter").show();
   $("#word-input").val(letterInput);
 }
+//remove last letter
 function clearLetter() {
   //get deleted letter information
   let deletedLetter = letterInput.slice(-1);
   let index = usedLetters.indexOf(deletedLetter);
-  //update arrays and input
+  //update arrays
   letterInput = letterInput.slice(0, -1);
   letters[index] = deletedLetter;
   usedLetters[index] = "";
@@ -244,6 +330,46 @@ function clearLetter() {
   $("#letter-"+index).show();
   $("#word-input").val(letterInput);
 }
+//submit word
+function submitWord() {
+  //don't allow if game is not currently started
+  $("#word-warn").hide()
+  if(!game.gameData.roundStarted || waiting) {
+    $("#word-warn").show();
+    $("#word-warn").text("Waiting for game");
+    return false
+  }
+  //get and validate word (needs dictionary ref)
+  let word = $("#word-input").val()
+  if (!word || word.length < 3) {
+    $("#word-warn").show()
+    $("#word-warn").text("Please enter a word")
+    return false
+  }
+  //validates word not already played and updates game state
+  game.playWord(word, function (res) {
+    //word already played
+    if (!res) {
+      $("#word-warn").show();
+      $("#word-warn").text(`${word} has already been played`);
+      clearWord();
+    //word added successfully
+    } else clearWord();
+  });
+}
+
+/*----CHAT----*/
+
+$("#new-comment").click(function () {
+  event.preventDefault();
+  let message = $("#chat-input").val().trim();
+  if (!message || !game.gameId) return false;
+  game.addMessage(game.playerName, message);
+  $("#chat-input").val("");
+})
+
+
+
 function watchChat() {
   if (!game.gameId){
     setTimeout(watchChat, 500);
@@ -261,31 +387,5 @@ function watchChat() {
       $comment.append($name, " : ", $message);
       $(".chat-text").append($comment)
     })
-  }
-}
-function waitForStart() {
-  if(params.createdBy){
-    $(".timer").text(`Waiting for ${params.createdBy} to start the game`);
-  }
-  if(!game.gameData.roundStarted){
-    setTimeout(waitForStart, 500)
-  } else {
-    createButtons();
-    let time = 60;
-    let timer = setInterval(countdown, 1000)
-    function countdown() {
-      time --
-      $(".timer").text(`You have ${time} seconds remaining`)
-      if(time === 0){
-        $(".timer").text(`Time's Up!`);
-        clearInterval(timer)
-        if(!params.createdBy){
-          game.endGame(function () {
-            $(".start-game").show();
-            waitForStart();
-          })
-        } else waitForStart();
-      }
-    }
   }
 }

@@ -22,6 +22,7 @@
           <input type="submit" value="Join Game" class="game-buttons" id="join-game">
           <input type="submit" value="Start Game" class="game-buttons start-game">
         </form>
+        <div class="warn-text"><span id="modal-warn"></span></div>
       </div>
     </div>
     <div class="timer">
@@ -30,15 +31,13 @@
     <div class="gameplay">
       <div class="letters"></div>
       <button type="button" name="button" id="shuffle">Shuffle</button>
-    </div>
-    <div class="playerWords">
-      <ul id="words"></ul>
       <form id="word">
         <input type="text" name="word" placeholder="Enter Word" id="word-input">
         <input type="submit" value="Submit" id="new-word">
         <input type="submit" value="Clear Word" id="clear-word">
         <input type="submit" value="Clear Letter" id="clear-letter">
       </fprm>
+      <div class="warn-text"><span id="word-warn"></span></div>
     </div>
     <div class="chat">
       <ul class="chat-text"></ul>

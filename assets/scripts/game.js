@@ -61,7 +61,7 @@ const game = {
         game.gameData = res;
         console.log(game.gameData);
       });
-      callback();
+      setTimeout(callback, 5000);
     });
   },
   //trigger start of round
@@ -69,13 +69,21 @@ const game = {
     database.changeState();
     if (callback) callback();
   },
-  playWord: function (word) {
-    if(!this.gameData.words) database.playWord(word)
-    let played = false;
-    for(var key in this.gameData.words){
-      if (this.gameData.words[key] === word) played = true;
+  playWord: function (word, callback) {
+    if(!this.gameData.words){
+       database.playWord(word);
+       callback(word);
+       return
+     } else {
+       for(var key in this.gameData.words){
+         if (this.gameData.words[key] === word){
+           callback();
+           return
+         }
+       }
     }
-    if(!played) database.playWord(word)
+   database.playWord(word);
+   callback(word);
   },
   setupRound: function (callback) {
     this.addMessage("Game update", `Waiting`);
@@ -128,11 +136,7 @@ const game = {
     this.addMessage("Game update", `${currentWinner.name} won! `)
     callback()
   },
-  newGame: function (callback) {
-    this.setupRound(function () {
 
-    })
-  },
   addMessage: function (player, message) {
     database.addMessage(player, message)
   }
